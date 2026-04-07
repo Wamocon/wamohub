@@ -1,36 +1,80 @@
+"use client";
+
+import { useAppState } from "@/lib/app-state";
+import { LoginScreen } from "@/components/login";
+import { Sidebar } from "@/components/sidebar";
+import { Topbar } from "@/components/topbar";
+import { DashboardView } from "@/components/modules/dashboard";
+import { ConsultantView } from "@/components/modules/consultant";
+import { ProjectsView } from "@/components/modules/projects";
+import { MentorView } from "@/components/modules/mentor";
+import { OrganizationView } from "@/components/modules/organization";
+import { AdminView } from "@/components/modules/admin";
+import { ApprovalsView } from "@/components/modules/approvals";
+import { NotesView } from "@/components/modules/notes";
+import { AcademyView } from "@/components/modules/academy";
+import { MiscView } from "@/components/modules/misc";
+
+const MODULE_TITLES: Record<string, string> = {
+  home: "Dashboard",
+  consultant: "Mein Bereich",
+  projekte: "Projekte",
+  mentor: "Mentoring",
+  organisation: "Organisation",
+  admin: "Administration",
+  approvals: "Genehmigungen",
+  rbac: "Administration",
+  notizen: "Notizen",
+  academy: "Academy",
+  sonstiges: "Sonstiges",
+};
+
+function ModuleRouter() {
+  const { module } = useAppState();
+  switch (module) {
+    case "home":
+      return <DashboardView />;
+    case "consultant":
+      return <ConsultantView />;
+    case "projekte":
+      return <ProjectsView />;
+    case "mentor":
+      return <MentorView />;
+    case "organisation":
+      return <OrganizationView />;
+    case "admin":
+    case "rbac":
+      return <AdminView />;
+    case "approvals":
+      return <ApprovalsView />;
+    case "notizen":
+      return <NotesView />;
+    case "academy":
+      return <AcademyView />;
+    case "sonstiges":
+      return <MiscView />;
+    default:
+      return <DashboardView />;
+  }
+}
+
 export default function Home() {
+  const { isLoggedIn, module, sidebarOpen } = useAppState();
+
+  if (!isLoggedIn) return <LoginScreen />;
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 font-sans dark:bg-black">
-      <main className="flex max-w-xl flex-col items-center gap-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Welcome to Your Project
-        </h1>
-        <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-          Edit{" "}
-          <code className="rounded bg-zinc-200 px-2 py-1 text-sm font-mono dark:bg-zinc-800">
-            src/app/page.tsx
-          </code>{" "}
-          to get started.
-        </p>
-        <div className="flex gap-4">
-          <a
-            className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-            href="https://nextjs.org/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Next.js Docs
-          </a>
-          <a
-            className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
-            href="https://supabase.com/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Supabase Docs
-          </a>
-        </div>
-      </main>
+    <div className="flex h-screen overflow-hidden bg-gray-950">
+      <Sidebar />
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+        <Topbar />
+        <main className="flex-1 overflow-y-auto p-6">
+          <h1 className="text-2xl font-bold text-white mb-6">
+            {MODULE_TITLES[module] ?? module}
+          </h1>
+          <ModuleRouter />
+        </main>
+      </div>
     </div>
   );
 }
