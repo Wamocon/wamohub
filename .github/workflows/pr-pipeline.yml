@@ -1,0 +1,43 @@
+# =============================================================================
+# Caller Workflow — PR Pipeline (Auto-Fix + Checks)
+# =============================================================================
+# ⚠️  TODO: Replace "Wamocon" and "github_workflow" below with your
+#     GitHub Organisation name and central workflow repository name
+#     if they differ.
+#
+#     YOUR_ORG  → your GitHub organisation name  (e.g. Wamocon)
+#     THIS_REPO → central workflow repository    (e.g. github_workflow)
+#
+# This workflow runs on every Pull Request targeting main/master.
+# It auto-fixes lint/format issues then validates with typecheck + lint.
+#
+# Deployment (preview + production) is handled separately by deploy.yml.
+# =============================================================================
+
+name: PR Pipeline
+
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened]
+
+# Cancel redundant runs on the same PR
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # --- Step 1: Auto-fix lint & format errors --------------------------------
+  autofix:
+    name: Auto-Fix
+    # ⚠️ CHANGE the org/repo below to match your setup
+    uses: Wamocon/github_workflow/.github/workflows/pr-autofix.yml@main
+    permissions:
+      contents: write
+
+  # --- Step 2: Validate code (typecheck + lint) -----------------------------
+  validate:
+    name: PR Checks
+    needs: autofix
+    # ⚠️ CHANGE the org/repo below to match your setup
+    uses: Wamocon/github_workflow/.github/workflows/pr-checks.yml@main
