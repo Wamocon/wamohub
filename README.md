@@ -40,4 +40,5 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 
 - **[HOWTO.md](HOWTO.md)** — Full setup & deployment guide (DE/EN)
 - **[AGENTS.md](AGENTS.md)** — GitHub Copilot agents, skills & instructions
+- **[docs/migration/README.md](docs/migration/README.md)** — SIT analysis, migration plan, and Phase-1 integration status
 - **[legal-docs/](legal-docs/)** — Legal document templates (DE/EN)
