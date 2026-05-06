@@ -3,9 +3,16 @@
 import { Users, Target, ClipboardCheck, Plus, CheckCircle, BookOpen, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useAppState } from "@/lib/app-state";
-import { shortId, formatLevel } from "@/lib/data";
+import { formatLevel } from "@/lib/data";
 import type { MentorTask } from "@/types/domain";
 import { Badge, Button, Input, Textarea, SectionCard, Modal } from "@/components/ui";
+import {
+  createGoal as createGoalAction,
+  updateAssessment,
+  createMentorTask as createMentorTaskAction,
+  updateMentorTask as updateMentorTaskAction,
+  createReflection as createReflectionAction,
+} from "@/lib/actions";
 
 export function MentorView() {
   const {
@@ -13,14 +20,11 @@ export function MentorView() {
     users,
     myMentees,
     goals,
-    setGoals,
     notes,
     assessments,
-    setAssessments,
     mentorTasks,
-    setMentorTasks,
     reflections,
-    setReflections,
+    refreshData,
   } = useAppState();
 
   const [selectedMenteeId, setSelectedMenteeId] = useState<string | null>(myMentees[0]?.id ?? null);
@@ -40,68 +44,81 @@ export function MentorView() {
     return <div className="text-gray-300 text-center py-12">Keine Mentees zugewiesen.</div>;
   }
 
-  const addMentorGoal = () => {
+  const addMentorGoal = async () => {
     if (!newGoal.title.trim() || !selectedMenteeId) return;
-    setGoals((prev) => [
-      ...prev,
-      { id: shortId(), ownerUserId: selectedMenteeId, createdBy: "MENTOR" as const, title: newGoal.title, description: newGoal.description, status: "OPEN" as const, createdAt: Date.now() },
-    ]);
-    setNewGoal({ title: "", description: "" });
+    try {
+      await createGoalAction({ ownerUserId: selectedMenteeId, createdBy: "MENTOR", title: newGoal.title, description: newGoal.description, status: "OPEN" });
+      setNewGoal({ title: "", description: "" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add goal:", err);
+    }
   };
 
-  const confirmAssessment = () => {
+  const confirmAssessment = async () => {
     if (!menteeAssessment) return;
-    setAssessments((prev) =>
-      prev.map((a) => (a.id === menteeAssessment.id ? { ...a, status: "MENTOR_CONFIRMED" as const, mentorConfirmedAt: Date.now() } : a)),
-    );
+    try {
+      await updateAssessment(menteeAssessment.id, { status: "MENTOR_CONFIRMED" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to confirm assessment:", err);
+    }
   };
 
-  const rejectAssessment = () => {
+  const rejectAssessment = async () => {
     if (!menteeAssessment) return;
-    setAssessments((prev) =>
-      prev.map((a) => (a.id === menteeAssessment.id ? { ...a, status: "FAILED" as const } : a)),
-    );
+    try {
+      await updateAssessment(menteeAssessment.id, { status: "FAILED" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to reject assessment:", err);
+    }
   };
 
-  const addMentorTask = () => {
+  const addMentorTask = async () => {
     if (!taskForm.title.trim() || !selectedMenteeId) return;
-    setMentorTasks((prev) => [
-      ...prev,
-      {
-        id: shortId(),
+    try {
+      await createMentorTaskAction({
         menteeUserId: selectedMenteeId,
         mentorUserId: activeUser.id,
         title: taskForm.title,
         description: taskForm.description,
         priority: taskForm.priority,
-        status: "PENDING" as const,
+        status: "PENDING",
         dueDate: taskForm.dueDate || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-        createdAt: Date.now(),
-      },
-    ]);
-    setTaskForm({ title: "", description: "", priority: "MEDIUM", dueDate: "" });
-    setShowTaskModal(false);
+      });
+      setTaskForm({ title: "", description: "", priority: "MEDIUM", dueDate: "" });
+      setShowTaskModal(false);
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add task:", err);
+    }
   };
 
-  const updateTaskStatus = (taskId: string, status: MentorTask["status"]) => {
-    setMentorTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)));
+  const updateTaskStatus = async (taskId: string, status: MentorTask["status"]) => {
+    try {
+      await updateMentorTaskAction(taskId, { status });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to update task:", err);
+    }
   };
 
-  const addReflection = () => {
+  const addReflection = async () => {
     if (!selectedMenteeId) return;
-    setReflections((prev) => [
-      ...prev,
-      {
-        id: shortId(),
+    try {
+      await createReflectionAction({
         menteeUserId: selectedMenteeId,
         mentorUserId: activeUser.id,
         title: `Reflection ${new Date().toLocaleDateString("de-DE")}`,
         description: "",
-        status: "PENDING" as const,
+        status: "PENDING",
         dueDate: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
-        createdAt: Date.now(),
-      },
-    ]);
+      });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add reflection:", err);
+    }
   };
 
   return (
@@ -132,10 +149,10 @@ export function MentorView() {
           </SectionCard>
 
           {/* Goals */}
-          <SectionCard title="Ziele" icon={Target} actions={<Button onClick={addMentorGoal}><Plus size={14} /> Ziel</Button>}>
+          <SectionCard title="Ziele" icon={Target} actions={<Button onClick={addMentorGoal} data-testid="mentor-goal-submit"><Plus size={14} /> Ziel</Button>}>
             <div className="space-y-2 mb-3">
-              <Input placeholder="Titel" value={newGoal.title} onChange={(e) => setNewGoal((g) => ({ ...g, title: e.target.value }))} />
-              <Textarea placeholder="Beschreibung" rows={2} value={newGoal.description} onChange={(e) => setNewGoal((g) => ({ ...g, description: e.target.value }))} />
+              <Input placeholder="Titel" value={newGoal.title} onChange={(e) => setNewGoal((g) => ({ ...g, title: e.target.value }))} data-testid="mentor-goal-title" />
+              <Textarea placeholder="Beschreibung" rows={2} value={newGoal.description} onChange={(e) => setNewGoal((g) => ({ ...g, description: e.target.value }))} data-testid="mentor-goal-desc" />
             </div>
             {menteeGoals.map((g) => (
               <div key={g.id} className="py-2 border-b border-gray-700 last:border-0 flex items-center justify-between">

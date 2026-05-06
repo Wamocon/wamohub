@@ -11,6 +11,7 @@ import {
   Settings,
   User,
 } from "lucide-react";
+import { useMemo } from "react";
 import { useAppState } from "@/lib/app-state";
 import { formatLevel, canAccessModule } from "@/lib/data";
 import { Tile } from "@/components/ui";
@@ -21,6 +22,7 @@ export function DashboardView() {
     allProjects,
     goals,
     notes,
+    timesheets,
     myMentorTasks,
     myMentees,
     isAdmin,
@@ -29,6 +31,23 @@ export function DashboardView() {
     setModule,
     users,
   } = useAppState();
+
+  // Derive recent activity from real data
+  const recentActivity = useMemo(() => {
+    const items: { action: string; detail: string; time: number; dot: string }[] = [];
+
+    for (const n of notes.filter((n) => n.ownerUserId === activeUser.id).slice(0, 3)) {
+      items.push({ action: "Note created", detail: n.body.slice(0, 50), time: n.createdAt, dot: "bg-blue-400" });
+    }
+    for (const g of goals.filter((g) => g.ownerUserId === activeUser.id).slice(0, 3)) {
+      items.push({ action: `Goal: ${g.title}`, detail: g.status, time: g.createdAt, dot: "bg-green-400" });
+    }
+    for (const t of timesheets.filter((t) => t.userId === activeUser.id).slice(0, 3)) {
+      items.push({ action: `Timesheet: ${t.hours}h`, detail: t.description, time: t.createdAt, dot: "bg-yellow-400" });
+    }
+
+    return items.sort((a, b) => b.time - a.time).slice(0, 5);
+  }, [notes, goals, timesheets, activeUser.id]);
 
   return (
     <div className="space-y-6">
@@ -105,18 +124,17 @@ export function DashboardView() {
           <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
         </div>
         <div className="space-y-3">
-          {[
-            { action: "Created new project note", project: "QA Transformation ACME", time: "2 hours ago", dot: "bg-blue-400" },
-            { action: "Updated goal progress", project: "CTFL Certification", time: "4 hours ago", dot: "bg-green-400" },
-            { action: "Added timesheet entry", project: "SAP Testmanagement", time: "1 day ago", dot: "bg-yellow-400" },
-          ].map((a, i) => (
+          {recentActivity.length === 0 && (
+            <div className="text-sm text-gray-400 text-center py-4">No recent activity.</div>
+          )}
+          {recentActivity.map((a, i) => (
             <div key={i} className="flex items-center gap-3 p-3 bg-gray-800 rounded-xl">
               <div className={`w-2 h-2 rounded-full ${a.dot}`} />
               <div className="flex-1">
                 <div className="text-sm text-gray-200">{a.action}</div>
-                <div className="text-xs text-gray-400">{a.project}</div>
+                <div className="text-xs text-gray-400">{a.detail}</div>
               </div>
-              <div className="text-xs text-gray-300">{a.time}</div>
+              <div className="text-xs text-gray-300">{new Date(a.time).toLocaleDateString("de-DE")}</div>
             </div>
           ))}
         </div>

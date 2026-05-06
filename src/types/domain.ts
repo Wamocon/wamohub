@@ -1,4 +1,4 @@
-// WAMOHUB Domain Types — migrated from SIT JavaScript to strict TypeScript
+// RELDA Domain Types — migrated from SIT JavaScript to strict TypeScript
 
 export type Level =
   | "PRAKTIKANT"
@@ -18,6 +18,7 @@ export interface User {
   level: Level;
   roles: RoleName[];
   cvFileUrl: string;
+  isActive: boolean;
 }
 
 export interface RolePermissions {
@@ -243,3 +244,36 @@ export type ModuleName =
   | "rbac"
   | "approvals"
   | "admin";
+
+// ---------------------------------------------------------------------------
+// WAMOCON 50 Apps
+// ---------------------------------------------------------------------------
+
+export type WamoconAppStatus = "PLANNED" | "IN_DEVELOPMENT" | "LIVE" | "PAUSED" | "CANCELLED";
+
+export interface WamoconWave {
+  id: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+  createdAt: number;
+}
+
+export interface WamoconApp {
+  id: string;
+  /** Opaque, URL-safe ID used in user-facing routes (`/wamocon-app/[publicId]`).
+   *  Internal UUID `id` is never exposed to the client. */
+  publicId: string;
+  name: string;
+  projectOwnerId: string | null;
+  category: string;
+  industry: string;
+  status: WamoconAppStatus;
+  appUrl: string;
+  landingPageUrl: string;
+  onedriveUrl: string;
+  description: string;
+  waveIds: string[];
+  createdAt: number;
+  updatedAt: number;
+}

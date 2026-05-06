@@ -3,16 +3,25 @@
 import { Briefcase, Plus, Search, ExternalLink, Users, Trash2, Edit } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAppState } from "@/lib/app-state";
-import { shortId } from "@/lib/data";
+import { useI18n } from "@/lib/i18n";
 import type { Project } from "@/types/domain";
 import { Badge, Button, Input, Textarea, Modal } from "@/components/ui";
+import { WamoconAppsView } from "@/components/modules/wamocon-apps";
+import {
+  createProject as createProjectAction,
+  updateProject as updateProjectAction,
+  deleteProject as deleteProjectAction,
+  updateProjectMembers,
+} from "@/lib/actions";
 
 export function ProjectsView() {
-  const { activeUser, userPermissions, allProjects, setProjects, users } = useAppState();
+  const { activeUser, userPermissions, allProjects, users, refreshData } = useAppState();
+  const { t } = useI18n();
   const canCreate = userPermissions.canViewAllProjects;
   const canEdit = userPermissions.canViewAllProjects;
   const canDelete = userPermissions.canManageSystem === true;
 
+  const [tab, setTab] = useState<"projects" | "wamocon">("projects");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -35,69 +44,98 @@ export function ProjectsView() {
     setEditingProject(p);
   };
 
-  const saveProject = () => {
-    if (editingProject) {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === editingProject.id ? { ...p, name: form.name, description: form.description, jiraUrl: form.jiraUrl, targetDate: form.targetDate, updatedAt: Date.now() } : p,
-        ),
-      );
-      setEditingProject(null);
-    } else {
-      const np: Project = {
-        id: shortId(),
-        name: form.name,
-        ownerUserId: activeUser.id,
-        description: form.description,
-        targetDate: form.targetDate,
-        jiraUrl: form.jiraUrl,
-        members: [{ userId: activeUser.id, roleLabel: "Lead" }],
-        createdBy: activeUser.id,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      setProjects((prev) => [...prev, np]);
-      setShowCreate(false);
+  const saveProject = async () => {
+    try {
+      if (editingProject) {
+        await updateProjectAction(editingProject.id, { name: form.name, description: form.description, jiraUrl: form.jiraUrl, targetDate: form.targetDate });
+        setEditingProject(null);
+      } else {
+        await createProjectAction({ name: form.name, ownerUserId: activeUser.id, description: form.description, targetDate: form.targetDate, jiraUrl: form.jiraUrl, createdBy: activeUser.id, members: [{ userId: activeUser.id, roleLabel: "Lead" }] });
+        setShowCreate(false);
+      }
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to save project:", err);
     }
   };
 
-  const deleteProject = (id: string) => setProjects((prev) => prev.filter((p) => p.id !== id));
-
-  const addMember = (projectId: string, userId: string) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId && !p.members.some((m) => m.userId === userId)
-          ? { ...p, members: [...p.members, { userId, roleLabel: "Mitglied" }] }
-          : p,
-      ),
-    );
+  const deleteProject = async (id: string) => {
+    try {
+      await deleteProjectAction(id);
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+    }
   };
 
-  const removeMember = (projectId: string, userId: string) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId ? { ...p, members: p.members.filter((m) => m.userId !== userId) } : p,
-      ),
-    );
+  const addMember = async (projectId: string, userId: string) => {
+    const project = allProjects.find((p) => p.id === projectId);
+    if (!project || !("members" in project) || project.members.some((m) => m.userId === userId)) return;
+    try {
+      await updateProjectMembers(projectId, [...project.members, { userId, roleLabel: "Mitglied" }]);
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add member:", err);
+    }
+  };
+
+  const removeMember = async (projectId: string, userId: string) => {
+    const project = allProjects.find((p) => p.id === projectId);
+    if (!project || !("members" in project)) return;
+    try {
+      await updateProjectMembers(projectId, project.members.filter((m) => m.userId !== userId));
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to remove member:", err);
+    }
   };
 
   const isProject = (p: typeof allProjects[number]): p is Project => "members" in p;
 
   return (
     <div className="space-y-4">
+      {/* Tab Bar */}
+      <div className="flex gap-1 border-b border-gray-700 mb-2">
+        <button
+          onClick={() => setTab("projects")}
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${
+            tab === "projects"
+              ? "bg-gray-800 text-white border border-gray-700 border-b-transparent -mb-px"
+              : "text-gray-400 hover:text-white"
+          }`}
+        >
+          {t("projects.tab.projects")}
+        </button>
+        <button
+          onClick={() => setTab("wamocon")}
+          data-testid="projects-tab-wamocon"
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${
+            tab === "wamocon"
+              ? "bg-gray-800 text-white border border-gray-700 border-b-transparent -mb-px"
+              : "text-gray-400 hover:text-white"
+          }`}
+        >
+          {t("projects.tab.wamocon")}
+        </button>
+      </div>
+
+      {tab === "wamocon" ? (
+        <WamoconAppsView />
+      ) : (
+      <>
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <Input className="pl-9" placeholder="Projekt suchen …" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input className="pl-9" placeholder={t("projects.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        {canCreate && <Button onClick={openCreate}><Plus size={14} /> Neues Projekt</Button>}
+        {canCreate && <Button onClick={openCreate} data-testid="projects-new"><Plus size={14} /> {t("projects.newProject")}</Button>}
       </div>
 
-      {filtered.length === 0 && <div className="text-sm text-gray-300 mt-6">Keine Projekte gefunden.</div>}
+      {filtered.length === 0 && <div className="text-sm text-gray-300 mt-6">{t("projects.noResults")}</div>}
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((p) => (
-          <div key={p.id} className="p-4 bg-gray-800/50 border border-gray-700 rounded-2xl space-y-3">
+          <div key={p.id} data-testid={`project-card-${p.id}`} className="p-4 bg-gray-800/50 border border-gray-700 rounded-2xl space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="font-semibold text-white text-lg flex items-center gap-2"><Briefcase size={16} /> {p.name}</div>
@@ -105,8 +143,8 @@ export function ProjectsView() {
               </div>
               {isProject(p) && (
                 <div className="flex gap-1 shrink-0">
-                  {canEdit && <button onClick={() => openEdit(p)} className="p-1.5 text-gray-300 hover:text-white rounded-lg hover:bg-gray-700 transition"><Edit size={14} /></button>}
-                  {canDelete && <button onClick={() => deleteProject(p.id)} className="p-1.5 text-red-400 hover:text-red-300 rounded-lg hover:bg-gray-700 transition"><Trash2 size={14} /></button>}
+                  {canEdit && <button onClick={() => openEdit(p)} data-testid={`project-edit-${p.id}`} className="p-1.5 text-gray-300 hover:text-white rounded-lg hover:bg-gray-700 transition"><Edit size={14} /></button>}
+                  {canDelete && <button onClick={() => deleteProject(p.id)} data-testid={`project-delete-${p.id}`} className="p-1.5 text-red-400 hover:text-red-300 rounded-lg hover:bg-gray-700 transition"><Trash2 size={14} /></button>}
                 </div>
               )}
             </div>
@@ -118,7 +156,7 @@ export function ProjectsView() {
             )}
             {isProject(p) && (
               <div>
-                <div className="text-xs text-gray-400 flex items-center gap-1 mb-1"><Users size={12} /> Mitglieder ({p.members.length})</div>
+                <div className="text-xs text-gray-400 flex items-center gap-1 mb-1"><Users size={12} /> {t("projects.members")} ({p.members.length})</div>
                 <div className="flex flex-wrap gap-1">
                   {p.members.map((m) => (
                     <Badge key={m.userId} color="gray">
@@ -135,7 +173,7 @@ export function ProjectsView() {
                     defaultValue=""
                     onChange={(e) => { if (e.target.value) addMember(p.id, e.target.value); e.target.value = ""; }}
                   >
-                    <option value="" disabled>Mitglied hinzufügen …</option>
+                    <option value="" disabled>{t("projects.addMember")}</option>
                     {users.filter((u) => !p.members.some((m) => m.userId === u.id)).map((u) => (
                       <option key={u.id} value={u.id}>{u.name}</option>
                     ))}
@@ -149,15 +187,17 @@ export function ProjectsView() {
 
       {/* Create / Edit Modal */}
       {(showCreate || editingProject) && (
-        <Modal open={true} title={editingProject ? "Projekt bearbeiten" : "Neues Projekt"} onClose={() => { setShowCreate(false); setEditingProject(null); }}>
+        <Modal open={true} title={editingProject ? t("projects.edit") : t("projects.create")} onClose={() => { setShowCreate(false); setEditingProject(null); }}>
           <div className="grid gap-3">
-            <Input placeholder="Projektname" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            <Textarea placeholder="Beschreibung" rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-            <Input placeholder="Jira URL (optional)" value={form.jiraUrl} onChange={(e) => setForm((f) => ({ ...f, jiraUrl: e.target.value }))} />
-            <Input type="date" placeholder="Zieldatum" value={form.targetDate} onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))} />
-            <Button onClick={saveProject}>Speichern</Button>
+            <Input placeholder={t("projects.name")} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} data-testid="project-name" />
+            <Textarea placeholder={t("projects.description")} rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} data-testid="project-description" />
+            <Input placeholder={t("projects.jiraUrl")} value={form.jiraUrl} onChange={(e) => setForm((f) => ({ ...f, jiraUrl: e.target.value }))} />
+            <Input type="date" placeholder={t("projects.targetDate")} value={form.targetDate} onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))} />
+            <Button onClick={saveProject} data-testid="project-submit">{t("projects.save")}</Button>
           </div>
         </Modal>
+      )}
+      </>
       )}
     </div>
   );

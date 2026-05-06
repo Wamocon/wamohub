@@ -1,10 +1,10 @@
-# WAMOHUB - Vollstaendige Ist-Dokumentation
+# RELDA - Vollstaendige Ist-Dokumentation
 
 Stand: 2026-04-07
 
 ## 1. Geltungsbereich und Methode
 
-Diese Dokumentation beschreibt den **aktuellen Implementierungsstand** der Anwendung im Repository `D:\Testprojekt\WAMOHUB`.
+Diese Dokumentation beschreibt den **aktuellen Implementierungsstand** der Anwendung im Repository `D:\Testprojekt\RELDA`.
 
 Ausgewertet wurden alle anwendungsrelevanten Dateien (15 Dateien ohne `node_modules`) sowie der Laufzeit-/Lint-Status.
 
@@ -38,7 +38,7 @@ Konfigurationen:
 - React Bootstrap: `src/main.jsx`
 - App Root: `src/App.jsx`
 - Fehlerabfang: `src/ErrorBoundary.jsx`
-- Hauptlogik/UI: `wamohub_interactive_preview_react (1).jsx`
+- Hauptlogik/UI: `RELDA_interactive_preview_react (1).jsx`
 - Zusatzmodule:
   - `src/Login.jsx`
   - `src/Timesheet.jsx`
@@ -74,7 +74,7 @@ Wichtig: Das System ist derzeit eine **In-Memory-Demo** ohne persistente Speiche
 
 ## 4.1 Datenhaltung
 
-Alle Domainedaten liegen als lokale States im Frontend (`useState`) und initiale Arrays/Objekte in `wamohub_interactive_preview_react (1).jsx` bzw. `src/Timesheet.jsx`.
+Alle Domainedaten liegen als lokale States im Frontend (`useState`) und initiale Arrays/Objekte in `RELDA_interactive_preview_react (1).jsx` bzw. `src/Timesheet.jsx`.
 
 Es gibt:
 - keine API-Calls zu realen Services
@@ -299,7 +299,7 @@ Status:
 
 Folgende Bereiche sind klar gemockt oder simuliert:
 
-- Mock-Datenblock fuer nahezu alle Entitaeten in `wamohub_interactive_preview_react (1).jsx`
+- Mock-Datenblock fuer nahezu alle Entitaeten in `RELDA_interactive_preview_react (1).jsx`
 - Mock-Timesheet-Daten in `src/Timesheet.jsx`
 - Simulierter Login/API-Delay (setTimeout / Promise delay)
 - Externe URLs oft auf `example.com`/Demo-Ziele
@@ -382,7 +382,7 @@ Um von "Interactive Preview" auf produktionsnah zu kommen, fehlen mindestens:
 - `postcss.config.js`
 - `tailwind.config.js`
 - `vite.config.js`
-- `wamohub_interactive_preview_react (1).jsx`
+- `RELDA_interactive_preview_react (1).jsx`
 - `src/App.jsx`
 - `src/ErrorBoundary.jsx`
 - `src/Login.jsx`
@@ -397,16 +397,16 @@ Um von "Interactive Preview" auf produktionsnah zu kommen, fehlen mindestens:
 Kurzfazit:
 Die Anwendung ist eine umfangreiche, visuell starke Frontend-Vorschau mit klar erkennbarem fachlichen Zielbild und vielen bereits abgebildeten Domainen. Der aktuelle Stand ist jedoch in grossen Teilen **demo-/mock-getrieben** und fuer produktiven Einsatz noch nicht ausreichend (Persistenz, Auth, Server-Checks, Tests, konsistente Workflows fehlen).
 
-## 12. Ziel-Repository-Abgleich (Wamocon/wamohub)
+## 12. Ziel-Repository-Abgleich (Wamocon/RELDA)
 
 ## 12.1 Verbindungsnachweis und Quellen
 
 Die Verbindung zum Ziel-Repository wurde ueber GitHub API + Raw-Dateien hergestellt und verifiziert:
 
-- Repo-Metadaten: `https://api.github.com/repos/Wamocon/wamohub`
-- Root-Inhalte: `https://api.github.com/repos/Wamocon/wamohub/contents`
-- README: `https://raw.githubusercontent.com/Wamocon/wamohub/main/README.md`
-- HOWTO: `https://raw.githubusercontent.com/Wamocon/wamohub/main/HOWTO.md`
+- Repo-Metadaten: `https://api.github.com/repos/Wamocon/RELDA`
+- Root-Inhalte: `https://api.github.com/repos/Wamocon/RELDA/contents`
+- README: `https://raw.githubusercontent.com/Wamocon/RELDA/main/README.md`
+- HOWTO: `https://raw.githubusercontent.com/Wamocon/RELDA/main/HOWTO.md`
 - Package/Konfigurationen: `package.json`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`
 - CI/CD-Workflows: `.github/workflows/deploy.yml`, `.github/workflows/pr-pipeline.yml`
 - App-Ordner: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`
@@ -516,8 +516,8 @@ Stand: 2026-04-07
 
 ### 16.1 Zielrepository lokal eingebunden
 
-- Geklont nach: `D:\Testprojekt\wamohub-target`
-- Feature-Branch: `feature/wamohub-migration`
+- Geklont nach: `D:\Testprojekt\RELDA-target`
+- Feature-Branch: `feature/RELDA-migration`
 - Commit: `6b7d91b` — Phase 1 komplett
 
 ### 16.2 Erstellte Dateien (22 geaendert, 3127 Zeilen hinzugefuegt)
@@ -542,7 +542,7 @@ Stand: 2026-04-07
 | `src/components/modules/academy.tsx` | Academy: Kurse, Zertifikate, Schulungsantraege (statisch/Mock) |
 | `src/components/modules/misc.tsx` | Sonstiges: Quick Links, Dokumente, Urlaubskonto, Kalender-Platzhalter |
 | `src/app/page.tsx` | App-Shell: Login-Gate, Sidebar + Topbar + Modul-Router |
-| `src/app/layout.tsx` | Root-Layout mit AppProvider, WAMOHUB-Metadaten, Dark-Theme |
+| `src/app/layout.tsx` | Root-Layout mit AppProvider, RELDA-Metadaten, Dark-Theme |
 | `src/app/globals.css` | Dark-Theme CSS mit wamocon-red Variable, Scrollbar-Styling |
 
 ### 16.3 Qualitaetssicherung

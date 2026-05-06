@@ -4,14 +4,14 @@ Stand: 2026-04-07
 
 ## 1. Ziel und Rahmen
 
-Ziel ist die technische Ueberfuehrung der aktuellen WAMOHUB-SIT-Applikation (React/Vite/JS/In-Memory) in das Ziel-Repository `Wamocon/wamohub` (Next.js 16/TypeScript/Tailwind v4/Supabase/Vercel CI-CD).
+Ziel ist die technische Ueberfuehrung der aktuellen RELDA-SIT-Applikation (React/Vite/JS/In-Memory) in das Ziel-Repository `Wamocon/RELDA` (Next.js 16/TypeScript/Tailwind v4/Supabase/Vercel CI-CD).
 
 Ergebnisziel:
 - Fachliche Kernprozesse bleiben erhalten.
 - Technische Plattform wird auf den Zielstandard umgemappt.
 - Dokumentierte Luecken werden in priorisierten Arbeitspaketen geschlossen.
 
-## 2. Verifizierte Zielanforderungen aus Wamocon/wamohub
+## 2. Verifizierte Zielanforderungen aus Wamocon/RELDA
 
 1. Next.js 16 mit App Router in `src/app`
 2. TypeScript strict
@@ -100,7 +100,7 @@ Ziele:
 - CI/CD und Environments fuer Entwicklung vorbereiten.
 
 Arbeitspakete:
-1. Ziel-Repo lokal klonen und Branch `feature/wamohub-migration` anlegen.
+1. Ziel-Repo lokal klonen und Branch `feature/RELDA-migration` anlegen.
 2. `.env.local` aus `.env.example` erstellen.
 3. Supabase Projekt verbinden (URL, ANON, SERVICE_ROLE, optional Schema).
 4. Vercel-Umgebung und `VERCEL_PROJECT_ID` Secret abstimmen.

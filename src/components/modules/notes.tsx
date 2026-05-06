@@ -3,12 +3,16 @@
 import { StickyNote, Plus, Trash2, Search, Edit } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useAppState } from "@/lib/app-state";
-import { shortId } from "@/lib/data";
 import type { Note } from "@/types/domain";
 import { Button, Input, Textarea, Modal } from "@/components/ui";
+import {
+  createNote as createNoteAction,
+  updateNote as updateNoteAction,
+  deleteNote as deleteNoteAction,
+} from "@/lib/actions";
 
 export function NotesView() {
-  const { activeUser, notes, setNotes } = useAppState();
+  const { activeUser, notes, refreshData } = useAppState();
   const myNotes = notes.filter((n) => n.ownerUserId === activeUser.id && n.scope === "GENERAL");
 
   const [search, setSearch] = useState("");
@@ -31,18 +35,30 @@ export function NotesView() {
     setEditing(n);
   };
 
-  const save = () => {
-    if (editing) {
-      setNotes((prev) => prev.map((n) => (n.id === editing.id ? { ...n, body: form.body } : n)));
-      setEditing(null);
-    } else {
-      if (!form.body.trim()) return;
-      setNotes((prev) => [...prev, { id: shortId(), ownerUserId: activeUser.id, scope: "GENERAL" as const, refId: null, visibility: "PRIVATE_SELF" as const, body: form.body, createdAt: Date.now() }]);
-      setShowCreate(false);
+  const save = async () => {
+    try {
+      if (editing) {
+        await updateNoteAction(editing.id, { body: form.body });
+        setEditing(null);
+      } else {
+        if (!form.body.trim()) return;
+        await createNoteAction({ ownerUserId: activeUser.id, scope: "GENERAL", refId: null, visibility: "PRIVATE_SELF", body: form.body });
+        setShowCreate(false);
+      }
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to save note:", err);
     }
   };
 
-  const deleteNote = (id: string) => setNotes((prev) => prev.filter((n) => n.id !== id));
+  const deleteNote = async (id: string) => {
+    try {
+      await deleteNoteAction(id);
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -51,7 +67,7 @@ export function NotesView() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input className="pl-9" placeholder="Notizen suchen …" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <Button onClick={openCreate}><Plus size={14} /> Neue Notiz</Button>
+        <Button onClick={openCreate} data-testid="notes-new"><Plus size={14} /> Neue Notiz</Button>
       </div>
 
       {filtered.length === 0 && <div className="text-gray-300 text-sm text-center py-8">Keine Notizen gefunden.</div>}
@@ -75,8 +91,8 @@ export function NotesView() {
       {(showCreate || editing) && (
         <Modal open={true} title={editing ? "Notiz bearbeiten" : "Neue Notiz"} onClose={() => { setShowCreate(false); setEditing(null); }}>
           <div className="grid gap-3">
-            <Textarea placeholder="Inhalt" rows={8} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} />
-            <Button onClick={save}>Speichern</Button>
+            <Textarea placeholder="Inhalt" rows={8} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} data-testid="notes-body" />
+            <Button onClick={save} data-testid="notes-submit">Speichern</Button>
           </div>
         </Modal>
       )}

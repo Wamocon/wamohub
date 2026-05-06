@@ -3,9 +3,15 @@
 import { Clock, Plus, Trash2, Plane, UmbrellaOff } from "lucide-react";
 import { useState } from "react";
 import { useAppState } from "@/lib/app-state";
-import { shortId } from "@/lib/data";
-import type { Timesheet, VacationRequest, TravelCost } from "@/types/domain";
+import type { Timesheet } from "@/types/domain";
 import { Badge, Button, Input, SectionCard } from "@/components/ui";
+import {
+  createTimesheet as createTimesheetAction,
+  updateTimesheet as updateTimesheetAction,
+  deleteTimesheet as deleteTimesheetAction,
+  createVacationRequest as createVacationRequestAction,
+  createTravelCost as createTravelCostAction,
+} from "@/lib/actions";
 
 type Tab = "timesheet" | "vacation" | "travel";
 
@@ -43,37 +49,46 @@ export function OrganizationView() {
 
 /* ═══ Timesheet Tab ═══ */
 function TimesheetTab() {
-  const { activeUser, timesheets, setTimesheets, projects } = useAppState();
+  const { activeUser, timesheets, projects, refreshData } = useAppState();
   const myEntries = timesheets.filter((e) => e.userId === activeUser.id);
 
   const [form, setForm] = useState({ date: "", projectId: "", hours: "", description: "", taskType: "Testing" as Timesheet["taskType"] });
 
-  const addEntry = () => {
+  const addEntry = async () => {
     if (!form.date || !form.projectId || !form.hours) return;
-    const entry: Timesheet = {
-      id: shortId(),
-      userId: activeUser.id,
-      projectId: form.projectId,
-      date: form.date,
-      hours: parseFloat(form.hours),
-      description: form.description,
-      taskType: form.taskType,
-      status: "DRAFT",
-      submittedAt: null,
-      reviewedBy: null,
-      reviewedAt: null,
-      createdAt: Date.now(),
-    };
-    setTimesheets((prev) => [...prev, entry]);
-    setForm({ date: "", projectId: "", hours: "", description: "", taskType: "Testing" });
+    try {
+      await createTimesheetAction({
+        userId: activeUser.id,
+        projectId: form.projectId,
+        date: form.date,
+        hours: parseFloat(form.hours),
+        description: form.description,
+        taskType: form.taskType,
+        status: "DRAFT",
+      });
+      setForm({ date: "", projectId: "", hours: "", description: "", taskType: "Testing" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add timesheet entry:", err);
+    }
   };
 
-  const submitEntry = (id: string) => {
-    setTimesheets((prev) => prev.map((e) => (e.id === id ? { ...e, status: "SUBMITTED" as const, submittedAt: Date.now() } : e)));
+  const submitEntry = async (id: string) => {
+    try {
+      await updateTimesheetAction(id, { status: "SUBMITTED" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to submit entry:", err);
+    }
   };
 
-  const deleteEntry = (id: string) => {
-    setTimesheets((prev) => prev.filter((e) => e.id !== id));
+  const deleteEntry = async (id: string) => {
+    try {
+      await deleteTimesheetAction(id);
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to delete entry:", err);
+    }
   };
 
   const totalHours = myEntries.reduce((s, e) => s + e.hours, 0);
@@ -125,31 +140,30 @@ function TimesheetTab() {
 
 /* ═══ Vacation Tab ═══ */
 function VacationTab() {
-  const { activeUser, urlaubRequests, setUrlaubRequests } = useAppState();
+  const { activeUser, urlaubRequests, refreshData } = useAppState();
   const myRequests = urlaubRequests.filter((v) => v.userId === activeUser.id);
 
   const [form, setForm] = useState({ from: "", to: "", reason: "" });
 
-  const addRequest = () => {
+  const addRequest = async () => {
     if (!form.from || !form.to) return;
     const start = new Date(form.from);
     const end = new Date(form.to);
     const diffDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000));
-    const req: VacationRequest = {
-      id: shortId(),
-      userId: activeUser.id,
-      startDate: form.from,
-      endDate: form.to,
-      days: diffDays,
-      status: "PENDING",
-      reason: form.reason,
-      submittedAt: Date.now(),
-      reviewedBy: null,
-      reviewedAt: null,
-      comments: "",
-    };
-    setUrlaubRequests((prev) => [...prev, req]);
-    setForm({ from: "", to: "", reason: "" });
+    try {
+      await createVacationRequestAction({
+        userId: activeUser.id,
+        startDate: form.from,
+        endDate: form.to,
+        days: diffDays,
+        status: "PENDING",
+        reason: form.reason,
+      });
+      setForm({ from: "", to: "", reason: "" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add vacation request:", err);
+    }
   };
 
   return (
@@ -174,28 +188,27 @@ function VacationTab() {
 
 /* ═══ Travel Cost Tab ═══ */
 function TravelTab() {
-  const { activeUser, travelCosts, setTravelCosts } = useAppState();
+  const { activeUser, travelCosts, refreshData } = useAppState();
   const myCosts = travelCosts.filter((t) => t.userId === activeUser.id);
 
   const [form, setForm] = useState({ date: "", description: "", amount: "" });
 
-  const addCost = () => {
+  const addCost = async () => {
     if (!form.date || !form.amount) return;
-    const tc: TravelCost = {
-      id: shortId(),
-      userId: activeUser.id,
-      date: form.date,
-      description: form.description,
-      amount: parseFloat(form.amount),
-      category: "Other",
-      status: "PENDING",
-      submittedAt: Date.now(),
-      reviewedBy: null,
-      reviewedAt: null,
-      comments: "",
-    };
-    setTravelCosts((prev) => [...prev, tc]);
-    setForm({ date: "", description: "", amount: "" });
+    try {
+      await createTravelCostAction({
+        userId: activeUser.id,
+        date: form.date,
+        description: form.description,
+        amount: parseFloat(form.amount),
+        category: "Other",
+        status: "PENDING",
+      });
+      setForm({ date: "", description: "", amount: "" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add travel cost:", err);
+    }
   };
 
   return (

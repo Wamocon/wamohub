@@ -6,6 +6,16 @@
   --wamocon-red: #FE0404;
 }
 
+.light {
+  --background: #ffffff;
+  --foreground: #111111;
+}
+
+.dark {
+  --background: #0f0f0f;
+  --foreground: #ededed;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -20,8 +30,86 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Scrollbar styling */
+/* ═══ Light mode overrides ═══ */
+
+/* --- Backgrounds --- */
+.light .bg-gray-950 { background-color: #f8fafc; }
+.light .bg-gray-900 { background-color: #ffffff; }
+.light .bg-gray-800 { background-color: #f1f5f9; }
+.light .bg-gray-800\/50 { background-color: rgba(241, 245, 249, 0.5); }
+.light .bg-gray-700 { background-color: #e2e8f0; }
+
+/* --- Text --- */
+.light .text-white { color: #0f172a; }
+.light .text-gray-200 { color: #334155; }
+.light .text-gray-300 { color: #475569; }
+.light .text-gray-400 { color: #64748b; }
+.light .text-gray-500 { color: #94a3b8; }
+.light .placeholder-gray-400::placeholder { color: #94a3b8; }
+
+/* --- Colored text (make readable on light bg) --- */
+.light .text-red-300 { color: #dc2626; }
+.light .text-red-400 { color: #dc2626; }
+.light .text-blue-300 { color: #2563eb; }
+.light .text-blue-400 { color: #2563eb; }
+.light .text-green-300 { color: #16a34a; }
+.light .text-green-400 { color: #16a34a; }
+.light .text-yellow-300 { color: #ca8a04; }
+.light .text-yellow-400 { color: #ca8a04; }
+.light .text-orange-400 { color: #ea580c; }
+.light .text-purple-400 { color: #9333ea; }
+
+/* --- Borders --- */
+.light .border-gray-700 { border-color: #e2e8f0; }
+.light .border-gray-600 { border-color: #cbd5e1; }
+.light .border-gray-800 { border-color: #e2e8f0; }
+.light .border-red-700 { border-color: #fecaca; }
+.light .border-green-700 { border-color: #bbf7d0; }
+.light .border-blue-700 { border-color: #bfdbfe; }
+.light .border-yellow-700 { border-color: #fef08a; }
+
+/* --- Accent backgrounds (softer for light mode) --- */
+.light .bg-red-900 { background-color: #fef2f2; }
+.light .bg-blue-900 { background-color: #eff6ff; }
+.light .bg-green-900 { background-color: #f0fdf4; }
+.light .bg-yellow-900 { background-color: #fefce8; }
+.light .bg-orange-900 { background-color: #fff7ed; }
+.light .bg-purple-900 { background-color: #faf5ff; }
+.light .bg-red-950\/50 { background-color: rgba(254, 242, 242, 0.5); }
+
+/* --- Hover states --- */
+.light .hover\:bg-gray-800:hover { background-color: #f1f5f9; }
+.light .hover\:bg-gray-700:hover { background-color: #e2e8f0; }
+.light .hover\:bg-gray-600:hover { background-color: #cbd5e1; }
+.light .hover\:text-white:hover { color: #0f172a; }
+
+/* --- Gradient overrides (login, dashboard welcome) --- */
+.light [class*="from-gray-900"][class*="to-gray-800"] {
+  background: linear-gradient(to right, #f1f5f9, #ffffff) !important;
+}
+.light [class*="from-gray-900"][class*="via-gray-800"][class*="to-gray-900"] {
+  background: linear-gradient(to bottom right, #f1f5f9, #e2e8f0, #f1f5f9) !important;
+}
+
+/* --- Modal overlay --- */
+.light .bg-black\/60 { background-color: rgba(0, 0, 0, 0.3); }
+
+/* --- Preserve white text on brand-colored backgrounds --- */
+.light .from-red-600.text-white,
+.light .from-red-600 .text-white,
+.light .bg-red-500.text-white,
+.light .bg-red-600 .text-white { color: #ffffff; }
+.light .from-red-600 .bg-white\/20 { background-color: rgba(255, 255, 255, 0.2); }
+
+/* --- Form elements (select, option) --- */
+.light select { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+.light option { background-color: #ffffff; color: #0f172a; }
+
+/* ═══ Scrollbar styling ═══ */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #666; }
+
+.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

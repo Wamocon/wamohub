@@ -3,8 +3,10 @@
 import { User, Briefcase, Target, ClipboardCheck, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { useAppState } from "@/lib/app-state";
-import { formatLevel, shortId } from "@/lib/data";
+import { formatLevel } from "@/lib/data";
 import { Badge, Button, Input, Textarea, SectionCard } from "@/components/ui";
+import { createGoal as createGoalAction, updateAssessment, createTimesheet as createTimesheetAction } from "@/lib/actions";
+import type { Timesheet } from "@/types/domain";
 
 export function ConsultantView() {
   const {
@@ -12,13 +14,12 @@ export function ConsultantView() {
     users,
     myProjects,
     goals,
-    setGoals,
     checklistTemplate,
     assessments,
-    setAssessments,
     myMentor,
     myMentorTasks,
     myReflections,
+    refreshData,
   } = useAppState();
 
   const myGoals = goals.filter((g) => g.ownerUserId === activeUser.id && g.createdBy === "SELF");
@@ -28,27 +29,48 @@ export function ConsultantView() {
   const myChecklist = checklistTemplate.fromLevel === activeUser.level ? checklistTemplate : null;
 
   const [newGoal, setNewGoal] = useState({ title: "", description: "" });
+  const [tsForm, setTsForm] = useState({ projectId: "", hours: "", description: "" });
 
-  const addGoal = () => {
+  const addGoal = async () => {
     if (!newGoal.title.trim()) return;
-    setGoals((prev) => [
-      ...prev,
-      { id: shortId(), ownerUserId: activeUser.id, createdBy: "SELF" as const, title: newGoal.title, description: newGoal.description, status: "OPEN" as const, createdAt: Date.now() },
-    ]);
-    setNewGoal({ title: "", description: "" });
+    try {
+      await createGoalAction({ ownerUserId: activeUser.id, createdBy: "SELF", title: newGoal.title, description: newGoal.description, status: "OPEN" });
+      setNewGoal({ title: "", description: "" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to add goal:", err);
+    }
   };
 
-  const submitAssessment = () => {
+  const submitAssessment = async () => {
     if (!myChecklist) return;
-    if (!myAssessment) {
-      setAssessments((prev) => [
-        ...prev,
-        { id: shortId(), menteeUserId: activeUser.id, targetLevel: myChecklist.toLevel, status: "SUBMITTED" as const, mentorConfirmedAt: null },
-      ]);
-    } else {
-      setAssessments((prev) =>
-        prev.map((a) => (a.id === myAssessment.id ? { ...a, status: "SUBMITTED" as const } : a)),
-      );
+    try {
+      if (myAssessment) {
+        await updateAssessment(myAssessment.id, { status: "SUBMITTED" });
+      }
+      // If no assessment exists, this would need a createAssessment action (future)
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to submit assessment:", err);
+    }
+  };
+
+  const submitTimesheet = async () => {
+    if (!tsForm.projectId || !tsForm.hours) return;
+    try {
+      await createTimesheetAction({
+        userId: activeUser.id,
+        projectId: tsForm.projectId,
+        date: new Date().toISOString().slice(0, 10),
+        hours: parseFloat(tsForm.hours),
+        description: tsForm.description,
+        taskType: "Testing" as Timesheet["taskType"],
+        status: "SUBMITTED",
+      });
+      setTsForm({ projectId: "", hours: "", description: "" });
+      await refreshData();
+    } catch (err) {
+      console.error("Failed to submit timesheet:", err);
     }
   };
 
@@ -119,6 +141,24 @@ export function ConsultantView() {
             <Button onClick={submitAssessment} disabled={(myAssessment?.status ?? "DRAFT") !== "DRAFT" && myAssessment?.status !== "FAILED"}>Einreichen</Button>
           </div>
         )}
+      </SectionCard>
+
+      {/* Timesheet entry */}
+      <SectionCard title="Zeiterfassung" icon={Briefcase}>
+        <div className="grid gap-2">
+          <select
+            className="bg-gray-900 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm"
+            value={tsForm.projectId}
+            onChange={(e) => setTsForm((f) => ({ ...f, projectId: e.target.value }))}
+            data-testid="timesheet-project"
+          >
+            <option value="">Projekt wählen</option>
+            {myProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <Input type="number" placeholder="Stunden" step="0.5" min="0" value={tsForm.hours} onChange={(e) => setTsForm((f) => ({ ...f, hours: e.target.value }))} data-testid="timesheet-hours" />
+          <Input placeholder="Beschreibung" value={tsForm.description} onChange={(e) => setTsForm((f) => ({ ...f, description: e.target.value }))} data-testid="timesheet-description" />
+          <Button onClick={submitTimesheet} disabled={!tsForm.projectId || !tsForm.hours} data-testid="timesheet-submit">Einreichen</Button>
+        </div>
       </SectionCard>
 
       {/* Mentor Tasks (mentee view) */}
