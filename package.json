@@ -11,6 +11,7 @@
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
+    "db:seed:auth": "npx tsx scripts/seed-auth-users.ts",
     "db:status": "npx supabase status"
   },
   "dependencies": {
