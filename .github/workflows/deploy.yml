@@ -49,54 +49,66 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - name: Set SUPABASE_SERVICE_ROLE_KEY in Vercel
+      - name: Set required env vars in Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          if [[ -z "$VERCEL_TOKEN" ]] || [[ -z "$VERCEL_PROJECT_ID" ]] || [[ -z "$SERVICE_ROLE_KEY" ]]; then
-            echo "⚠ Skipping: VERCEL_TOKEN, VERCEL_PROJECT_ID, or SUPABASE_SERVICE_ROLE_KEY not set."
-            echo "  Add SUPABASE_SERVICE_ROLE_KEY to this repo's GitHub Secrets to enable admin features."
+          if [[ -z "$VERCEL_TOKEN" ]] || [[ -z "$VERCEL_PROJECT_ID" ]]; then
+            echo "⚠ Skipping: VERCEL_TOKEN or VERCEL_PROJECT_ID not set."
             exit 0
           fi
 
           TARGET='["production","preview"]'
-          PAYLOAD="[{\"key\":\"SUPABASE_SERVICE_ROLE_KEY\",\"value\":\"$SERVICE_ROLE_KEY\",\"type\":\"encrypted\",\"target\":$TARGET}]"
 
-          HTTP=$(curl -s -o /tmp/vercel_env_resp.json -w "%{http_code}" \
-            -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD")
+          # Fetch existing env vars once (used by upsert_var)
+          EXISTING=$(curl -s \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
 
-          if [[ "$HTTP" == "200" ]] || [[ "$HTTP" == "201" ]]; then
-            echo "✓ SUPABASE_SERVICE_ROLE_KEY created in Vercel project."
-          elif [[ "$HTTP" == "400" ]] || [[ "$HTTP" == "409" ]]; then
-            echo "  Env var exists — updating via PATCH..."
-            ENV_ID=$(curl -s \
-              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
-              -H "Authorization: Bearer $VERCEL_TOKEN" | \
-              python3 -c "
-          import sys, json
-          data = json.load(sys.stdin)
-          envs = data.get('envs', [])
-          match = [e for e in envs if e.get('key') == 'SUPABASE_SERVICE_ROLE_KEY']
-          print(match[0].get('id', '') if match else '')
-          ")
-            if [[ -n "$ENV_ID" ]]; then
-              curl -s -X PATCH \
-                "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$ENV_ID" \
+          # Upsert a single env var: create if new, patch if existing
+          upsert_var() {
+            local KEY="$1"
+            local VALUE="$2"
+            local TYPE="${3:-plain}"
+
+            EXISTING_ID=$(echo "$EXISTING" | \
+              jq -r ".envs[] | select(.key == \"$KEY\") | .id" 2>/dev/null | head -1)
+
+            if [[ -n "$EXISTING_ID" ]] && [[ "$EXISTING_ID" != "null" ]]; then
+              HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X PATCH "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$EXISTING_ID" \
                 -H "Authorization: Bearer $VERCEL_TOKEN" \
                 -H "Content-Type: application/json" \
-                -d "{\"value\":\"$SERVICE_ROLE_KEY\"}" > /dev/null
-              echo "✓ SUPABASE_SERVICE_ROLE_KEY updated in Vercel project."
+                -d "{\"value\":\"$VALUE\",\"type\":\"$TYPE\",\"target\":$TARGET}")
+              echo "✓ $KEY updated (HTTP $HTTP)"
             else
-              echo "⚠ Could not find env var ID to update."
+              HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+                -H "Authorization: Bearer $VERCEL_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "[{\"key\":\"$KEY\",\"value\":\"$VALUE\",\"type\":\"$TYPE\",\"target\":$TARGET}]")
+              echo "✓ $KEY created (HTTP $HTTP)"
             fi
+          }
+
+          # Public vars — safe to hardcode (Supabase anon key is designed to be public;
+          # access control is enforced by Row Level Security on the database).
+          upsert_var "NEXT_PUBLIC_SUPABASE_URL" \
+            "https://gximupcgdkfibukwctrv.supabase.co"
+          upsert_var "NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aW11cGNnZGtmaWJ1a3djdHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NTkwOTksImV4cCI6MjA5NDQzNTA5OX0.Whl-EsTaNDjcwkualQjmMZGe4JQk9tvrdpXGbNrz9f8"
+          upsert_var "SUPABASE_DB_SCHEMA" "public"
+          upsert_var "NEXT_PUBLIC_APP_URL" "https://wamohub.vercel.app"
+
+          # Secret var — only injected when SUPABASE_SERVICE_ROLE_KEY is configured
+          # as a GitHub Secret in this repo.
+          if [[ -n "$SERVICE_ROLE_KEY" ]]; then
+            upsert_var "SUPABASE_SERVICE_ROLE_KEY" "$SERVICE_ROLE_KEY" "encrypted"
           else
-            echo "⚠ Unexpected HTTP $HTTP from Vercel API."
-            cat /tmp/vercel_env_resp.json || true
+            echo "⚠ SUPABASE_SERVICE_ROLE_KEY not set — admin features will not work."
+            echo "  Add SUPABASE_SERVICE_ROLE_KEY to this repo's GitHub Secrets to enable them."
           fi
 
   deploy:
