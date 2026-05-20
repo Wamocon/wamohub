@@ -55,7 +55,7 @@ export function LoginForm() {
                   required
                   data-testid="login-email"
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500"
-                  placeholder="name@wamocon.de"
+                  placeholder="name@wamocon.com"
                 />
               </div>
             </div>
@@ -158,7 +158,7 @@ export function LoginForm() {
 
         <div className="mt-8 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
           Demo:&nbsp;
-          <code className="text-gray-400">waleri.moretz@wamocon.de</code> / <code className="text-gray-400">Demo1234!</code>
+          <code className="text-gray-400">waleri.moretz@wamocon.com</code> / <code className="text-gray-400">Demo1234!</code>
           <div className="mt-2">
             <Link href="/legal/imprint" className="hover:text-gray-300">Impressum</Link>
             <span className="mx-2">\u00b7</span>

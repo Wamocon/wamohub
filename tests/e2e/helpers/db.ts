@@ -46,7 +46,7 @@ export function makePrefix(label = "test"): string {
  *   - it starts with the literal `e2e-`,
  *   - it does not match any demo email domain or demo UUID prefix.
  */
-const PROTECTED_EMAIL_DOMAINS = ["@wamocon.de"];
+const PROTECTED_EMAIL_DOMAINS = ["@wamocon.com"];
 const PROTECTED_UUID_PREFIXES = [
   "a0000000-",
   "b0000000-",

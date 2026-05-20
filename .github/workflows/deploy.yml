@@ -1,70 +1,49 @@
 # =============================================================================
-# Caller Workflow — Unified Vercel Deployment
+# Caller Workflow - Manual Vercel Deployment
 # =============================================================================
-# ⚠️  TODO: Replace "Wamocon" and "github_workflow" below with your
-#     GitHub Organisation name and central workflow repository name
-#     if they differ.
+# Source: Wamocon/github_workflow/examples/caller-production-deploy.yml
 #
-#     YOUR_ORG  → your GitHub organisation name  (e.g. Wamocon)
-#     THIS_REPO → central workflow repository    (e.g. github_workflow)
+# Trigger : MANUAL ONLY - Actions tab → "Deploy to Vercel" → Run workflow
+#           Choose "production" (live URL) or "preview" (test URL) at run time.
+#           This workflow NEVER runs automatically.
 #
 # Secrets required:
-#   - VERCEL_TOKEN      → managed at GitHub Organisation level (already set)
-#   - VERCEL_ORG_ID     → managed at GitHub Organisation level (already set)
-#   - VERCEL_PROJECT_ID → YOU must add this to your repo's GitHub secrets
+#   - VERCEL_PROJECT_ID → add this to your repo's GitHub secrets
+#                         (Vercel Project → Settings → General → Project ID)
+#
+# Already set at organisation level (no action needed):
+#   - VERCEL_TOKEN   → personal Vercel access token
+#   - VERCEL_ORG_ID  → Vercel personal account ID
 #
 # How it works:
-#   pull_request → main/master  →  Vercel *preview* deployment
-#   push         → main/master  →  Vercel *production* deployment
-#
-# Schema (db_schema input):
-#   Leave db_schema empty (default) → schema is pulled from Vercel env vars.
-#   Pass a value only if you need to override what Vercel has configured,
-#   e.g. projects using non-standard schema names like "qa" or "live".
+#   Builds locally via Vercel CLI - Vercel never sees the GitHub repo owner,
+#   so there are no "team seat" errors on a personal Hobby account in a GitHub org.
 # =============================================================================
 
-name: Deploy
+name: Deploy to Vercel
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-
-# Cancel in-progress preview deploys on new commits; never cancel production
-concurrency:
-  group: deploy-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deploy target"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - preview
+      db_schema:
+        description: "Optional NEXT_PUBLIC_DB_SCHEMA override (leave empty to use Vercel env vars)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
-  # --- Resolve deployment parameters ----------------------------------------
-  set-vars:
-    name: Resolve deployment variables
-    runs-on: ubuntu-latest
-    outputs:
-      vercel_env: ${{ steps.resolve.outputs.vercel_env }}
-      vercel_args: ${{ steps.resolve.outputs.vercel_args }}
-    steps:
-      - name: Resolve vercel_env and vercel_args
-        id: resolve
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "vercel_env=production" >> $GITHUB_OUTPUT
-            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
-          else
-            echo "vercel_env=preview" >> $GITHUB_OUTPUT
-            echo "vercel_args=" >> $GITHUB_OUTPUT
-          fi
-
-  # --- Deploy ---------------------------------------------------------------
   deploy:
-    name: Deploy to Vercel
-    needs: set-vars
-    # ⚠️ CHANGE the org/repo below to match your setup
-    uses: Wamocon/github_workflow/.github/workflows/deploy-preview.yml@main
+    name: Deploy - ${{ inputs.environment }}
+    uses: Wamocon/github_workflow/.github/workflows/deploy.yml@main
     with:
-      vercel_env: ${{ needs.set-vars.outputs.vercel_env }}
-      vercel_args: ${{ needs.set-vars.outputs.vercel_args }}
-      # db_schema: ""        # empty = use value from Vercel Dashboard env vars
-      # db_schema: "qa"      # override for repos with non-standard schema names
+      vercel_env: ${{ inputs.environment }}
+      db_schema: ${{ inputs.db_schema }}
     secrets: inherit

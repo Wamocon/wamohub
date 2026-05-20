@@ -6,16 +6,16 @@
  *   npm run db:seed:auth
  *
  * Demo passwords (NEVER use these patterns in production):
- *   waleri.moretz@wamocon.de    / Demo1234!   (Admin + Mentor, GF)
- *   olga.moretz@wamocon.de      / Demo1234!   (Admin, Assistenz GF)
- *   daniel.moretz@wamocon.de    / Demo1234!   (Mentor, ISTQB-Trainer)
- *   nikolaj.schefner@wamocon.de / Demo1234!   (Mentor, ISTQB-Trainer)
- *   nurzhan.kukeyev@wamocon.de  / Demo1234!   (Mentee)
- *   leon.moretz@wamocon.de      / Demo1234!   (Mentee)
- *   erwin.moretz@wamocon.de     / Demo1234!   (Mentee)
- *   elias.felsing@wamocon.de / Demo1234!   (Mentee)
- *   yash.bhesaniya@wamocon.de   / Demo1234!   (Mentee)
- *   maanik.garg@wamocon.de      / Demo1234!   (Mentee)
+ *   waleri.moretz@wamocon.com    / Demo1234!   (Admin + Mentor + Ausbilder, GF)
+ *   olga.moretz@wamocon.com      / Demo1234!   (Admin, Assistenz GF)
+ *   daniel.moretz@wamocon.com    / Demo1234!   (Ausbilder, ISTQB-Trainer)
+ *   nikolaj.schefner@wamocon.com / Demo1234!   (Mentee)
+ *   nurzhan.kukeyev@wamocon.com  / Demo1234!   (Mentee)
+ *   leon.moretz@wamocon.com      / Demo1234!   (Mentee, Azubi)
+ *   erwin.moretz@wamocon.com     / Demo1234!   (Mentee)
+ *   elias.felsing@wamocon.com    / Demo1234!   (Mentee, Azubi)
+ *   yash.bhesaniya@wamocon.com   / Demo1234!   (Mentee)
+ *   maanik.garg@wamocon.com      / Demo1234!   (Mentee)
  *
  * Idempotent: re-running updates passwords + re-links rows.
  */
@@ -38,16 +38,16 @@ const admin = createClient(url, serviceKey, {
 });
 
 const DEMO_USERS = [
-  { email: "waleri.moretz@wamocon.de",    password: "Demo1234!" },
-  { email: "olga.moretz@wamocon.de",      password: "Demo1234!" },
-  { email: "daniel.moretz@wamocon.de",    password: "Demo1234!" },
-  { email: "nikolaj.schefner@wamocon.de", password: "Demo1234!" },
-  { email: "nurzhan.kukeyev@wamocon.de",  password: "Demo1234!" },
-  { email: "leon.moretz@wamocon.de",      password: "Demo1234!" },
-  { email: "erwin.moretz@wamocon.de",     password: "Demo1234!" },
-  { email: "elias.felsing@wamocon.de", password: "Demo1234!" },
-  { email: "yash.bhesaniya@wamocon.de",   password: "Demo1234!" },
-  { email: "maanik.garg@wamocon.de",      password: "Demo1234!" },
+  { email: "waleri.moretz@wamocon.com",    password: "Demo1234!" },
+  { email: "olga.moretz@wamocon.com",      password: "Demo1234!" },
+  { email: "daniel.moretz@wamocon.com",    password: "Demo1234!" },
+  { email: "nikolaj.schefner@wamocon.com", password: "Demo1234!" },
+  { email: "nurzhan.kukeyev@wamocon.com",  password: "Demo1234!" },
+  { email: "leon.moretz@wamocon.com",      password: "Demo1234!" },
+  { email: "erwin.moretz@wamocon.com",     password: "Demo1234!" },
+  { email: "elias.felsing@wamocon.com",    password: "Demo1234!" },
+  { email: "yash.bhesaniya@wamocon.com",   password: "Demo1234!" },
+  { email: "maanik.garg@wamocon.com",      password: "Demo1234!" },
 ] as const;
 
 async function findAuthUserByEmail(email: string) {
@@ -103,7 +103,7 @@ async function main() {
       process.exit(1);
     }
   }
-  console.log("\nDone. All 5 demo accounts can log in with password 'Demo1234!'.");
+  console.log("\nDone. All 10 demo accounts can log in with password 'Demo1234!'.");
 }
 
 main();

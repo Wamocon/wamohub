@@ -9,7 +9,7 @@ export type Level =
   | "SENIOR_MANAGER"
   | "ADMIN";
 
-export type RoleName = "Mentee" | "Mentor" | "Admin";
+export type RoleName = "Mentee" | "Mentor" | "Admin" | "Azubi" | "Ausbilder";
 
 export interface User {
   id: string;

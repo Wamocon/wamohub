@@ -23,7 +23,7 @@ test("8 waves exist in DB and Wave 1 contains placeholder apps", async () => {
     .from("wamocon_app_waves")
     .select("app_id")
     .eq("wave_id", wave1!.id);
-  expect(assignments?.length ?? 0).toBeGreaterThanOrEqual(12); // 12 placeholder apps from migration
+  expect(assignments?.length ?? 0).toBeGreaterThanOrEqual(4); // 4 apps in Wave 1 per seed.sql
 });
 
 test("Wamocon Apps detail page is reachable via opaque public_id", async ({ page }) => {
@@ -32,7 +32,7 @@ test("Wamocon Apps detail page is reachable via opaque public_id", async ({ page
   const { data: app } = await adminDb
     .from("wamocon_apps")
     .select("public_id, name")
-    .eq("id", "fa100000-0000-0000-0000-000000000001")
+    .eq("id", "fa000000-0000-0000-0000-000000000001")
     .maybeSingle();
   expect(app?.public_id).toMatch(/^[A-Za-z0-9_-]{12}$/);
 

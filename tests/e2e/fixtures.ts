@@ -13,9 +13,9 @@ import { expect, test as base, type Page } from "@playwright/test";
 export type RelaLoginRole = "Admin" | "Mentor" | "Mentee";
 
 const DEMO_EMAIL: Record<RelaLoginRole, string> = {
-  Admin: "waleri.moretz@wamocon.de",
-  Mentor: "daniel.moretz@wamocon.de",
-  Mentee: "nurzhan.kukeyev@wamocon.de",
+  Admin: "waleri.moretz@wamocon.com",
+  Mentor: "waleri.moretz@wamocon.com",
+  Mentee: "nurzhan.kukeyev@wamocon.com",
 };
 
 const DEMO_PASSWORD = "Demo1234!";

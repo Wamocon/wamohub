@@ -8,29 +8,30 @@
 -- rest of this seed file remain valid. Roles are derived from each person's
 -- public role on the WAMOCON website.
 INSERT INTO users (id, name, email, level, roles, cv_file_url) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'Nurzhan Kukeyev',  'nurzhan.kukeyev@wamocon.de',  'CONSULTANT',        '{Mentee}',          ''),
-  ('a0000000-0000-0000-0000-000000000002', 'Daniel Moretz',    'daniel.moretz@wamocon.de',    'MANAGER',           '{Mentor}',          ''),
-  ('a0000000-0000-0000-0000-000000000003', 'Waleri Moretz',    'waleri.moretz@wamocon.de',    'ADMIN',             '{Admin,Mentor}',    ''),
-  ('a0000000-0000-0000-0000-000000000004', 'Leon Moretz',      'leon.moretz@wamocon.de',      'JUNIOR_CONSULTANT', '{Mentee}',          ''),
-  ('a0000000-0000-0000-0000-000000000005', 'Olga Moretz',      'olga.moretz@wamocon.de',      'SENIOR_MANAGER',    '{Admin}',           ''),
-  ('a0000000-0000-0000-0000-000000000006', 'Nikolaj Schefner', 'nikolaj.schefner@wamocon.de', 'MANAGER',           '{Mentor}',          ''),
-  ('a0000000-0000-0000-0000-000000000007', 'Erwin Moretz',     'erwin.moretz@wamocon.de',     'CONSULTANT',        '{Mentee}',          ''),
-  ('a0000000-0000-0000-0000-000000000008', 'Jonathan Boschin', 'jonathan.boschin@wamocon.de', 'JUNIOR_CONSULTANT', '{Mentee}',          ''),
-  ('a0000000-0000-0000-0000-000000000009', 'Yash Bhesaniya',   'yash.bhesaniya@wamocon.de',   'CONSULTANT',        '{Mentee}',          ''),
-  ('a0000000-0000-0000-0000-000000000010', 'Maanik Garg',      'maanik.garg@wamocon.de',      'CONSULTANT',        '{Mentee}',          ''),
-  ('a0000000-0000-0000-0000-000000000011', 'Elias Felsing',    'elias.felsing@wamocon.de',    'JUNIOR_CONSULTANT', '{Mentee}',          '')
+  ('a0000000-0000-0000-0000-000000000001', 'Nurzhan Kukeyev',  'nurzhan.kukeyev@wamocon.com',  'CONSULTANT',        '{Mentee}',                    ''),
+  ('a0000000-0000-0000-0000-000000000002', 'Daniel Moretz',    'daniel.moretz@wamocon.com',    'MANAGER',           '{Mentee,Ausbilder}',          ''),
+  ('a0000000-0000-0000-0000-000000000003', 'Waleri Moretz',    'waleri.moretz@wamocon.com',    'ADMIN',             '{Admin,Mentor,Ausbilder}',    ''),
+  ('a0000000-0000-0000-0000-000000000004', 'Leon Moretz',      'leon.moretz@wamocon.com',      'JUNIOR_CONSULTANT', '{Mentee,Azubi}',              ''),
+  ('a0000000-0000-0000-0000-000000000005', 'Olga Moretz',      'olga.moretz@wamocon.com',      'SENIOR_MANAGER',    '{Admin}',                     ''),
+  ('a0000000-0000-0000-0000-000000000006', 'Nikolaj Schefner', 'nikolaj.schefner@wamocon.com', 'MANAGER',           '{Mentee}',                    ''),
+  ('a0000000-0000-0000-0000-000000000007', 'Erwin Moretz',     'erwin.moretz@wamocon.com',     'CONSULTANT',        '{Mentee}',                    ''),
+  ('a0000000-0000-0000-0000-000000000009', 'Yash Bhesaniya',   'yash.bhesaniya@wamocon.com',   'CONSULTANT',        '{Mentee}',                    ''),
+  ('a0000000-0000-0000-0000-000000000010', 'Maanik Garg',      'maanik.garg@wamocon.com',      'CONSULTANT',        '{Mentee}',                    ''),
+  ('a0000000-0000-0000-0000-000000000011', 'Elias Felsing',    'elias.felsing@wamocon.com',    'JUNIOR_CONSULTANT', '{Mentee,Azubi}',              '')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
--- MENTOR RELATIONS — Trainers (Daniel, Nikolaj, Waleri) coach the Mentees
+-- MENTOR RELATIONS — All Mentees report to Waleri
 -- ============================================================================
 INSERT INTO mentor_relations (mentor_user_id, mentee_user_id, since, active) VALUES
-  ('a0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', now() - interval '120 days', true),  -- Daniel  -> Nurzhan
-  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', now() - interval '60 days',  true),  -- Waleri  -> Leon
-  ('a0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000007', now() - interval '45 days',  true),  -- Nikolaj -> Erwin
-  ('a0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000008', now() - interval '30 days',  true),  -- Nikolaj -> Jonathan
-  ('a0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000009', now() - interval '20 days',  true),  -- Daniel  -> Yash
-  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000010', now() - interval '15 days',  true);  -- Waleri  -> Maanik
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', now() - interval '120 days', true),  -- Waleri -> Nurzhan
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', now() - interval '100 days', true),  -- Waleri -> Daniel
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', now() - interval '60 days',  true),  -- Waleri -> Leon
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000007', now() - interval '45 days',  true),  -- Waleri -> Erwin
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000009', now() - interval '20 days',  true),  -- Waleri -> Yash
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000010', now() - interval '15 days',  true),  -- Waleri -> Maanik
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000011', now() - interval '10 days',  true),  -- Waleri -> Elias
+  ('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000006', now() - interval '90 days',  true);  -- Waleri -> Nikolaj
 
 -- ============================================================================
 -- PROJECTS
@@ -74,7 +75,7 @@ INSERT INTO goals (owner_user_id, created_by, title, description, status) VALUES
 INSERT INTO notes (owner_user_id, scope, ref_id, visibility, body) VALUES
   ('a0000000-0000-0000-0000-000000000001', 'GENERAL', NULL, 'PRIVATE_SELF', 'Ideen für Testdatenstrategie notieren.'),
   ('a0000000-0000-0000-0000-000000000001', 'PROJECT', 'b0000000-0000-0000-0000-000000000001', 'PRIVATE_SELF', 'Smoke-Tests für Checkout priorisieren.'),
-  ('a0000000-0000-0000-0000-000000000002', 'MENTEE_PRIVATE', 'a0000000-0000-0000-0000-000000000001', 'PRIVATE_MENTOR', 'Nurzhan: Sehr proaktiv, Fokus auf CTFL unterstützen.'),
+  ('a0000000-0000-0000-0000-000000000003', 'MENTEE_PRIVATE', 'a0000000-0000-0000-0000-000000000001', 'PRIVATE_MENTOR', 'Nurzhan: Sehr proaktiv, Fokus auf CTFL unterstützen.'),
   ('a0000000-0000-0000-0000-000000000004', 'GENERAL', NULL, 'PRIVATE_SELF', 'Notiz: nächste Woche Selenium Workshop besuchen.');
 
 -- ============================================================================
@@ -106,16 +107,16 @@ INSERT INTO assessments (mentee_user_id, target_level, status) VALUES
 -- MENTOR TASKS
 -- ============================================================================
 INSERT INTO mentor_tasks (mentee_user_id, mentor_user_id, title, description, due_date, status, priority) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'Complete CTFL certification', 'Study and pass the CTFL exam by end of Q2', '2026-06-30', 'PENDING', 'HIGH'),
-  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'Lead a project retrospective', 'Facilitate a retrospective meeting for the ACME project', '2026-02-15', 'IN_PROGRESS', 'MEDIUM'),
-  ('a0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000005', 'Setup Selenium environment', 'Install and configure Selenium WebDriver locally', '2026-05-01', 'PENDING', 'HIGH');
+  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'Complete CTFL certification', 'Study and pass the CTFL exam by end of Q2', '2026-06-30', 'PENDING', 'HIGH'),
+  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'Lead a project retrospective', 'Facilitate a retrospective meeting for the ACME project', '2026-02-15', 'IN_PROGRESS', 'MEDIUM'),
+  ('a0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000003', 'Setup Selenium environment', 'Install and configure Selenium WebDriver locally', '2026-05-01', 'PENDING', 'HIGH');
 
 -- ============================================================================
 -- REFLECTIONS
 -- ============================================================================
 INSERT INTO reflections (mentee_user_id, mentor_user_id, title, description, status, due_date) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'Q1 Performance Review', 'Reflect on your performance and growth in Q1', 'PENDING', '2026-03-31'),
-  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'CTFL Certification Progress', 'Review progress on CTFL certification preparation', 'IN_PROGRESS', '2026-04-15');
+  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'Q1 Performance Review', 'Reflect on your performance and growth in Q1', 'PENDING', '2026-03-31'),
+  ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'CTFL Certification Progress', 'Review progress on CTFL certification preparation', 'IN_PROGRESS', '2026-04-15');
 
 -- ============================================================================
 -- TIMESHEETS
