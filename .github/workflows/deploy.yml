@@ -8,16 +8,20 @@
 #           This workflow NEVER runs automatically.
 #
 # Secrets required:
-#   - VERCEL_PROJECT_ID → add this to your repo's GitHub secrets
-#                         (Vercel Project → Settings → General → Project ID)
+#   - VERCEL_PROJECT_ID       → add this to your repo's GitHub secrets
+#                               (Vercel Project → Settings → General → Project ID)
+#   - SUPABASE_SERVICE_ROLE_KEY → Supabase service role key (bypasses RLS).
+#                               Add to repo secrets so admin Server Actions work.
 #
 # Already set at organisation level (no action needed):
 #   - VERCEL_TOKEN   → personal Vercel access token
 #   - VERCEL_ORG_ID  → Vercel personal account ID
 #
 # How it works:
-#   Builds locally via Vercel CLI - Vercel never sees the GitHub repo owner,
-#   so there are no "team seat" errors on a personal Hobby account in a GitHub org.
+#   1. setup-vercel-env: injects SUPABASE_SERVICE_ROLE_KEY into the Vercel
+#      project via the Vercel API (idempotent — safe to re-run).
+#   2. deploy: builds and deploys via Vercel CLI (prebuilt).
+#      NEXT_PUBLIC_* vars are committed in .env.production as a fallback.
 # =============================================================================
 
 name: Deploy to Vercel
@@ -40,10 +44,68 @@ on:
         default: ""
 
 jobs:
+  setup-vercel-env:
+    name: Inject secrets into Vercel project
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Set SUPABASE_SERVICE_ROLE_KEY in Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [[ -z "$VERCEL_TOKEN" ]] || [[ -z "$VERCEL_PROJECT_ID" ]] || [[ -z "$SERVICE_ROLE_KEY" ]]; then
+            echo "⚠ Skipping: VERCEL_TOKEN, VERCEL_PROJECT_ID, or SUPABASE_SERVICE_ROLE_KEY not set."
+            echo "  Add SUPABASE_SERVICE_ROLE_KEY to this repo's GitHub Secrets to enable admin features."
+            exit 0
+          fi
+
+          TARGET='["production","preview"]'
+          PAYLOAD="[{\"key\":\"SUPABASE_SERVICE_ROLE_KEY\",\"value\":\"$SERVICE_ROLE_KEY\",\"type\":\"encrypted\",\"target\":$TARGET}]"
+
+          HTTP=$(curl -s -o /tmp/vercel_env_resp.json -w "%{http_code}" \
+            -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          if [[ "$HTTP" == "200" ]] || [[ "$HTTP" == "201" ]]; then
+            echo "✓ SUPABASE_SERVICE_ROLE_KEY created in Vercel project."
+          elif [[ "$HTTP" == "400" ]] || [[ "$HTTP" == "409" ]]; then
+            echo "  Env var exists — updating via PATCH..."
+            ENV_ID=$(curl -s \
+              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" | \
+              python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          envs = data.get('envs', [])
+          match = [e for e in envs if e.get('key') == 'SUPABASE_SERVICE_ROLE_KEY']
+          print(match[0].get('id', '') if match else '')
+          ")
+            if [[ -n "$ENV_ID" ]]; then
+              curl -s -X PATCH \
+                "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$ENV_ID" \
+                -H "Authorization: Bearer $VERCEL_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "{\"value\":\"$SERVICE_ROLE_KEY\"}" > /dev/null
+              echo "✓ SUPABASE_SERVICE_ROLE_KEY updated in Vercel project."
+            else
+              echo "⚠ Could not find env var ID to update."
+            fi
+          else
+            echo "⚠ Unexpected HTTP $HTTP from Vercel API."
+            cat /tmp/vercel_env_resp.json || true
+          fi
+
   deploy:
     name: Deploy - ${{ inputs.environment }}
+    needs: [setup-vercel-env]
+    if: always()
     uses: Wamocon/github_workflow/.github/workflows/deploy.yml@main
     with:
       vercel_env: ${{ inputs.environment }}
       db_schema: ${{ inputs.db_schema }}
     secrets: inherit
+
