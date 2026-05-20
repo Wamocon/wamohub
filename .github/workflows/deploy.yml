@@ -67,29 +67,37 @@ jobs:
             "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
             -H "Authorization: Bearer $VERCEL_TOKEN")
 
-          # Upsert a single env var: create if new, patch if existing
+          # Upsert: delete all existing records for the key, then create fresh
           upsert_var() {
             local KEY="$1"
             local VALUE="$2"
             local TYPE="${3:-plain}"
 
-            EXISTING_ID=$(echo "$EXISTING" | \
-              jq -r ".envs[] | select(.key == \"$KEY\") | .id" 2>/dev/null | head -1)
+            # Delete all existing records for this key (Vercel may store one record per
+            # environment target, so there can be multiple IDs for the same key)
+            mapfile -t ENV_IDS < <(echo "$EXISTING" | \
+              jq -r ".envs[] | select(.key == \"$KEY\") | .id" 2>/dev/null)
 
-            if [[ -n "$EXISTING_ID" ]] && [[ "$EXISTING_ID" != "null" ]]; then
-              HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-                -X PATCH "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$EXISTING_ID" \
-                -H "Authorization: Bearer $VERCEL_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{\"value\":\"$VALUE\",\"type\":\"$TYPE\",\"target\":$TARGET}")
-              echo "✓ $KEY updated (HTTP $HTTP)"
+            for ENV_ID in "${ENV_IDS[@]}"; do
+              if [[ -n "$ENV_ID" ]] && [[ "$ENV_ID" != "null" ]]; then
+                curl -s -o /dev/null \
+                  -X DELETE "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env/$ENV_ID" \
+                  -H "Authorization: Bearer $VERCEL_TOKEN"
+              fi
+            done
+
+            # Create fresh record covering both production and preview
+            HTTP=$(curl -s -o /tmp/vercel_create.json -w "%{http_code}" \
+              -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "[{\"key\":\"$KEY\",\"value\":\"$VALUE\",\"type\":\"$TYPE\",\"target\":$TARGET}]")
+
+            if [[ "$HTTP" == "200" ]] || [[ "$HTTP" == "201" ]]; then
+              echo "✓ $KEY set (HTTP $HTTP)"
             else
-              HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-                -X POST "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env" \
-                -H "Authorization: Bearer $VERCEL_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "[{\"key\":\"$KEY\",\"value\":\"$VALUE\",\"type\":\"$TYPE\",\"target\":$TARGET}]")
-              echo "✓ $KEY created (HTTP $HTTP)"
+              echo "⚠ $KEY failed (HTTP $HTTP)"
+              cat /tmp/vercel_create.json || true
             fi
           }
 
